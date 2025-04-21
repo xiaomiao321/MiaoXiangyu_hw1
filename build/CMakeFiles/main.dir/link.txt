@@ -1,0 +1,1 @@
+/usr/bin/cc -rdynamic CMakeFiles/main.dir/src/algebra.c.o CMakeFiles/main.dir/src/main.c.o -o /home/xiaomiao/xlab/MiaoXiangyu_hw1/bin/main 
