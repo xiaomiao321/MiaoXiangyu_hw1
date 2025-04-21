@@ -219,6 +219,8 @@ Matrix inv_matrix(Matrix a)
     return result_inv;
 }
 
+#define EPSILON 1e-9 // 防止误差导致的误判
+
 int rank_matrix(Matrix a)
 {
     if (a.rows <= 0 || a.cols <= 0 || a.rows > MAX_MATRIX_SIZE || a.cols > MAX_MATRIX_SIZE)
@@ -227,71 +229,51 @@ int rank_matrix(Matrix a)
         return 0;
     }
     Matrix temp = a; // 复制一份
-    int rank = (a.rows < a.cols) ? a.rows : a.cols;
+    int rank = 0; // 最终秩
     int row = 0; // 当前处理的行
+
     // 对每一列进行高斯消元
     for (int col = 0; col < a.cols && row < a.rows; col++)
     {
-        if (temp.data[row][col] != 0)
+        // 寻找主元
+        int pivot = -1;
+        for (int i = row; i < a.rows; i++)
         {
-            // 主对角线元素非零，消去下方元素
-            for (int i = row + 1; i < a.rows; i++)
+            if (fabs(temp.data[i][col]) > EPSILON)
             {
-                if (temp.data[i][col] != 0)
-                {
-                    double factor = temp.data[i][col] / temp.data[row][col];
-                    // 行运算
-                    for (int j = col; j < a.cols; j++)
-                    {
-                        temp.data[i][j] -= factor * temp.data[row][j];
-                    }
-                }
+                pivot = i;
+                break;
             }
-            row++; // 移动到下一行
         }
-        else
-        {
-            // 主对角线元素为零，寻找下方非零元素
-            int swap_row = -1;
-            for (int i = row + 1; i < a.rows; i++)
-            {
-                if (temp.data[i][col] != 0)
-                {
-                    swap_row = i;
-                    break;
-                }
-            }
 
-            if (swap_row != -1)
+        if (pivot == -1)
+        {
+            continue; // 当前列没有非零元素，跳过
+        }
+
+        // 交换当前行和主元行
+        for (int j = col; j < a.cols; j++)
+        {
+            double t = temp.data[row][j];
+            temp.data[row][j] = temp.data[pivot][j];
+            temp.data[pivot][j] = t;
+        }
+
+        // 消去下方元素
+        for (int i = row + 1; i < a.rows; i++)
+        {
+            if (fabs(temp.data[i][col]) > EPSILON)
             {
-                // 找到非零元素，进行行交换
+                double factor = temp.data[i][col] / temp.data[row][col];
                 for (int j = col; j < a.cols; j++)
                 {
-                    double t = temp.data[row][j];
-                    temp.data[row][j] = temp.data[swap_row][j];
-                    temp.data[swap_row][j] = t;
+                    temp.data[i][j] -= factor * temp.data[row][j];
                 }
-                // 消去下方元素
-                for (int i = row + 1; i < a.rows; i++)
-                {
-                    if (temp.data[i][col] != 0)
-                    {
-                        double factor = temp.data[i][col] / temp.data[row][col];
-                        for (int j = col; j < a.cols; j++)
-                        {
-                            temp.data[i][j] -= factor * temp.data[row][j];
-                        }
-                    }
-                }
-                row++; // 移动到下一行
-            }
-            else
-            {
-                // 当前列主对角线及以下全为零，秩减一
-                rank--;
-                // 跳到下一列，无需移动行
             }
         }
+
+        row++; // 移动到下一行
+        rank++; // 秩加一
     }
 
     return rank;
